@@ -11,7 +11,6 @@ namespace FxManager
         public static bool IsEnabled { get; private set; } = true;
         public static Utility.Logger Logger { get; private set; }
         public static ModEventHandler ModEventHandler { get; private set; }
-
         [OwlcatModificationEnterPoint]
         public static void ModEntryPoint(OwlcatModification modDetails)
         {

@@ -56,7 +56,5 @@ namespace FxManager.UI.MVVM.Views
         public override void DestroyViewImplementation()
         {
         }
-
-        
     }
 }

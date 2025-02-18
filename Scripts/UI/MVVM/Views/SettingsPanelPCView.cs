@@ -23,11 +23,23 @@ namespace FxManager.UI.MVVM.Views
         private VirtualListVertical _virtualListVertical;
 
         [SerializeField]
-        SettingViews _settingViews;
+        private SettingHeaderElementPCView _settingHeaderElementPCView;
+
+        [SerializeField]
+        private ColorPickerElementPCView _colorPickerPCView;
 
         public void Initialize()
         {
-            _settingViews.InitializeVirtualList(_virtualListVertical);
+            InitializeVirtualList(_virtualListVertical);
+        }
+
+        public void InitializeVirtualList(VirtualListComponent virtualListComponent)
+        {
+            virtualListComponent.Initialize(new IVirtualListElementTemplate[]
+            {
+                    new VirtualListElementTemplate<SettingHeaderElementVM>(_settingHeaderElementPCView),
+                    new VirtualListElementTemplate<ColorPickerElementVM>(_colorPickerPCView),
+            });
         }
 
         public override void BindViewImplementation()
@@ -57,6 +69,10 @@ namespace FxManager.UI.MVVM.Views
             [SerializeField]
             private ColorPickerElementPCView _colorPickerPCView;
 
+            public SettingViews()
+            {
+                
+            }
         }
     }
 }

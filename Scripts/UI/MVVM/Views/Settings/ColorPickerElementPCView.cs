@@ -15,10 +15,10 @@ namespace FxManager.UI.MVVM.Views.Settings
 {
     internal class ColorPickerElementPCView : VirtualListElementViewBase<ColorPickerElementVM>
     {
-        public override VirtualListLayoutElementSettings LayoutSettings => _virtualListSettings;
+        public override VirtualListLayoutElementSettings LayoutSettings => _layoutSettings;
 
         [SerializeField]
-        private VirtualListLayoutElementSettings _virtualListSettings;
+        private VirtualListLayoutElementSettings _layoutSettings;
 
         [SerializeField]
         private Slider _redSlider;

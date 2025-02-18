@@ -22,6 +22,11 @@ namespace FxManager.UI.MVVM.Views
         [SerializeField]
         private Button _expandButton;
 
+        [SerializeField]
+        private VirtualListLayoutElementSettings _layoutSettings;
+
+        public override VirtualListLayoutElementSettings LayoutSettings => _layoutSettings;
+
         public override void BindViewImplementation()
         {
             base.AddDisposable(ViewModel.HeaderText.Subscribe(x => _headerText.text = x));

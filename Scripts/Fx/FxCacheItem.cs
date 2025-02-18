@@ -1,6 +1,7 @@
 ﻿using Kingmaker.Blueprints;
 using System.Collections.Concurrent;
 using Newtonsoft.Json;
+using Kingmaker.ResourceLinks;
 
 namespace FxManager.Fx
 {
@@ -15,15 +16,19 @@ namespace FxManager.Fx
         [JsonProperty]
         public ConcurrentDictionary<string, byte> BlueprintReferences {get; set;}
 
+        [JsonProperty]
+        public PrefabLink PrefabLink {get; set;}
+
         public FxCacheItem() 
         { 
         }
         
 
-        public FxCacheItem(string assetId, string name, BlueprintScriptableObject blueprint)
+        public FxCacheItem(string assetId, string name, PrefabLink prefabLink, BlueprintScriptableObject blueprint)
         {
             AssetId = assetId;
             Name = name;
+            PrefabLink = prefabLink;
 
             //Fake Concurrent HashSet. I think better performance than using lock.
             BlueprintReferences = new ConcurrentDictionary<string, byte>

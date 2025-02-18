@@ -2,14 +2,8 @@
 using Kingmaker.UI.MVVM._VM.Utility;
 using Owlcat.Runtime.UI.MVVM;
 using Owlcat.Runtime.UI.VirtualListSystem;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using UnityEngine;
 using UniRx;
-using Owlcat.Runtime.UI.VirtualListSystem.Vertical;
 
 namespace FxManager.UI.MVVM.Views
 {

@@ -20,7 +20,6 @@ namespace FxManager.UI
         List<string> _fixPathes = new List<string>()
         {
             "LogCanvas/HUDLayout/CombatLog_New/TooglePanel/ToogleAll/ToogleAll/",
-            
         };
 
         [SerializeField]
@@ -32,7 +31,9 @@ namespace FxManager.UI
             
             var obj = RootUIConfig.FindObjectOfType<MainMenuPCView>();
 
-            if (obj != null && (transform = obj.transform.Find("SceneUICanvas/SideBar/Buttons/Continue/")) == null)
+            if (obj != null)
+                transform = obj.transform.Find("SceneUICanvas/SideBar/Buttons/Continue/");
+            else
             {
                 foreach (var path in _fixPathes)
                 {

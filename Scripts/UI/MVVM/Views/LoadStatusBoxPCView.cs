@@ -12,6 +12,7 @@ using FxManager.Fx;
 using UnityEngine.UI;
 using Owlcat.Runtime.UI.Controls.Button;
 using Owlcat.Runtime.UI.Controls.Other;
+using FxManager.Utility.Extensions.StringExtentsions;
 
 
 namespace FxManager.UI.MVVM.Views
@@ -49,11 +50,16 @@ namespace FxManager.UI.MVVM.Views
             if (status == FxCollectionStatus.Error)
                 _okButton.gameObject.SetActive(true);
 
-            _loadingStatusText.text = Enum.GetName(typeof(FxCollectionStatus), status);
+            _loadingStatusText.text = Enum.GetName(typeof(FxCollectionStatus), status).ConvertCamelCaseToWords();
         }
 
         private void OnProgessChange(float value)
         {
+            if (value < 0f)
+                _loadingProgressText.gameObject.SetActive(false);
+            else if (!_loadingProgressText.gameObject.activeSelf)
+                _loadingProgressText.gameObject.SetActive(true);
+
             _loadingProgressText.text = value.ToString("P1");
         }
 

@@ -13,32 +13,58 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEditor;
 using UnityEngine;
+using FxManager.Utility.Extensions;
+using UniRx;
 
 namespace FxManager.Fx
 {
     internal class ActiveFxs
     {
-        public static ConcurrentDictionary<PrefabLink, ActiveFxModel> Active = new ConcurrentDictionary<PrefabLink, ActiveFxModel>();
+        public static IReadOnlyCollection<ActiveFxModelBase> ActiveFXs => (IReadOnlyCollection<ActiveFxModelBase>) _activeFXs.Keys;
+        private static readonly ConcurrentDictionary<ActiveFxModelBase, byte> _activeFXs = new ConcurrentDictionary<ActiveFxModelBase, byte>();
+
+        private static readonly Subject<ActiveFxModelBase> _fxAddedSubject = new Subject<ActiveFxModelBase>();
+        private static readonly Subject<ActiveFxModelBase> _fxRemovedSubject = new Subject<ActiveFxModelBase>();
+
+        public static IObservable<ActiveFxModelBase> FxAddedObservable => _fxAddedSubject.AsObservable();
+        public static IObservable<ActiveFxModelBase> FxRemovedObservable => _fxRemovedSubject.AsObservable();
+
+        public static void Add(ActiveFxModelBase fx)
+        {
+            if (!_activeFXs.TryAdd(fx, 0))
+                throw new InvalidOperationException($"The FX model already exists in the collection: {fx.Name}");
+
+            _fxAddedSubject.OnNext(fx);
+        }
+
+        public static void Remove(ActiveFxModelBase fx)
+        {
+            if (!_activeFXs.TryRemove(fx, out _))
+                throw new InvalidOperationException($"Removing FX model failed: {fx.Name}");
+
+            _fxRemovedSubject.OnNext(fx);
+        }
 
         static class FxPatches
         {
-            [HarmonyPatch(typeof(SpawnFxOnStart), nameof(SpawnFxOnStart.SpawnFx))]
-            static class SpawnFxOnStartSpawnFxPatch
+            [HarmonyPatch(typeof(FxHelper))]
+            static class FxHelper_SpawnFxOnUnit_Patch
             {
-                static PrefabLink _prefabLink;
-
-                [HarmonyTranspiler]
-                static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
+                [HarmonyPatch(nameof(FxHelper.SpawnFxOnUnit))]
+                [HarmonyPostfix]
+                public static void SpawnFxOnUnit(
+                    IFxHandle __result, 
+                    GameObject prefab, 
+                    UnitEntityView unit, 
+                    bool? partyRelated = null, 
+                    string defaultLocator = null, 
+                    Vector3 offsetDirection = default(Vector3), 
+                    FxPriority priority = FxPriority.EventuallyImportant)
                 {
-                    /*
-                    var matcher = new CodeMatcher()
-                        .MatchStartForward(CodeMatch.IsLdarg(0));
-
-                    matcher.DeclareLocal(typeof(SpawnFxOnStart), out var instance);
-                    */
-                    return instructions;
-
+                    if (__result != null)
+                        Add(new ActiveFxModelUnit(__result, unit));
                 }
             }
         }

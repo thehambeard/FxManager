@@ -21,6 +21,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using Newtonsoft.Json;
 using System.IO;
+using Kingmaker.UnitLogic.Buffs;
 
 namespace FxManager.Fx
 {
@@ -30,8 +31,8 @@ namespace FxManager.Fx
         [HarmonyPatch(typeof(MainMenu), nameof(MainMenu.Awake))]
         [HarmonyPostfix]
         static void AfterLaunch(MainMenu __instance)
-        { 
-            var prefab = ResourcesLibrary.TryGetResource<GameObject>("ae891d86221dbf541a88a10ce3a9d149");
+        {
+            var prefab = ResourcesLibrary.TryGetResource<GameObject>("d187ac7feef9828419f6a49ac812ee5d");
 
             if (prefab == null)
                 throw new NullReferenceException("Unable to load LoadStatusBox prefab");
@@ -39,9 +40,9 @@ namespace FxManager.Fx
             var obj = GameObject.Instantiate(prefab, __instance.transform, false);
             var view = obj.GetComponent<LoadStatusBoxPCView>();
             view.Bind(new LoadStatusBoxVM());
-            
 
-            FxCache.Instance.Load(); 
+
+            FxCache.Instance.Load();
         }
     }
 
@@ -64,7 +65,18 @@ namespace FxManager.Fx
 
         private readonly HashSet<string> _ignore = new HashSet<string>()
         {
-            "a4f0eb3b30dbbfa45a612bd4ed804349"
+            "a4f0eb3b30dbbfa45a612bd4ed804349",
+            "a001e1b222dd2c2439445a1db0b77948",
+            "7efcf49ee795e944199fd1891f69df63",
+            "7f0b130061e53494ea06f654771aa5d0",
+            "94a5a956678d8c947a4c34da92c0a3ed",
+            "cfcddb3309117e2459957336cc6654bf",
+            "e82d2f0a230564943ad63acf5cad8474",
+            "a001e1b222dd2c2439445a1db0b77948",
+            "ff2d5ffa001627f4d934002fd7c8d491",
+            "f8dcfbcd0d6de5b4d8689479419ac930",
+            "83e3242f47212ae419adeee8d8d94210",
+            "8836539fbc8c99d42bf5ba18ec6f7b47",
         };
 
         public static FxCache Instance
@@ -72,7 +84,7 @@ namespace FxManager.Fx
             get => _instance ??= new FxCache();
         }
 
-        [JsonProperty] 
+        [JsonProperty]
         public ConcurrentDictionary<string, FxCacheItem> FXs = new ConcurrentDictionary<string, FxCacheItem>();
 
         public ReactiveProperty<FxCollectionStatus> Status = new ReactiveProperty<FxCollectionStatus>(FxCollectionStatus.None);
@@ -93,7 +105,6 @@ namespace FxManager.Fx
                 return;
             }
 
-
             List<SimpleBlueprint> bps;
 
             Status.Value = FxCollectionStatus.BlueprintsLoading;
@@ -101,11 +112,11 @@ namespace FxManager.Fx
             while ((bps = BlueprintLoader.Shared.GetBlueprints()) == null && BlueprintLoader.Shared.IsRunning)
             {
                 Progress.Value = BlueprintLoader.Shared.progress;
-                await Task.Delay(200); 
+                await Task.Delay(200);
             }
 
             Status.SetValueAndForceNotify(FxCollectionStatus.GettingFXs);
-            Progress.Value = 0f;
+            Progress.Value = -1f;
 
             _total = bps.Count;
             _completed = 0;
@@ -118,33 +129,51 @@ namespace FxManager.Fx
                 {
                     try
                     {
-                        if (bp is BlueprintBuff buff)
+                        switch (bp)
                         {
-                            if (!string.IsNullOrEmpty(buff.FxOnStart?.AssetId))
-                                AddFxThreadSafe(buff.FxOnStart.AssetId, buff.FxOnStart, buff);
-                            if (!string.IsNullOrEmpty(buff.FxOnRemove?.AssetId))
-                                AddFxThreadSafe(buff.FxOnRemove.AssetId, buff.FxOnRemove, buff);
+                            case BlueprintBuff buff:
+                                AddFxThreadSafe(buff.FxOnStart, buff);
+                                AddFxThreadSafe(buff.FxOnRemove, buff);
+                                break;
+                            case BlueprintUnit unit:
+                                Observable.NextFrame().Subscribe(_ =>
+                                {
+                                    if (_ignore.Contains(unit.Prefab.AssetId))
+                                        return;
+
+                                    var prefab = unit.Prefab.Load();
+
+                                    if (prefab == null || prefab.m_SpawnFxOnStart == null)
+                                        return;
+
+                                    AddFxThreadSafe(
+                                        prefab.m_SpawnFxOnStart.FxOnStart,
+                                        unit);
+
+                                    AddFxThreadSafe(
+                                        prefab.m_SpawnFxOnStart.FxOnDeath,
+                                        unit);
+                                });
+                                break;
                         }
+                        _completed++;
                     }
                     catch (Exception ex)
                     {
                         Main.Logger.Error(ex);
                     }
-
-                    _completed++;
                 });
             });
 
-            Status.Value = FxCollectionStatus.Complete;
-
             Progress.Value = 1f;
+            Status.Value = FxCollectionStatus.Complete;
 
             try
             {
                 string json = JsonConvert.SerializeObject(FXs, Formatting.Indented);
                 File.WriteAllText(Path.Combine(Main.ModDetails.Path, _cacheName), json);
             }
-            catch 
+            catch
             {
                 Main.Logger.Error("Saving cache failed.");
             }
@@ -157,29 +186,36 @@ namespace FxManager.Fx
             {
                 Progress.Value = _completed / (float)_total;
                 Progress.SetValueAndForceNotify(Math.Min(Math.Max(Progress.Value, 0), 1));
-                Thread.Sleep(200);
+                Thread.Sleep(500);
             }
             Progress.Value = 1f;
         }
 
-        private void AddFxThreadSafe(string assetId, PrefabLink link, BlueprintScriptableObject blueprint)
+        private void AddFxThreadSafe(PrefabLink link, BlueprintScriptableObject blueprint)
         {
             try
             {
-                if (_ignore.Contains(assetId))
+                if (link == null || string.IsNullOrEmpty(link.AssetId))
+                    return;
+
+                if (_ignore.Contains(link.AssetId))
                     return;
 
                 Observable.NextFrame().Subscribe(_ =>
                 {
-                    if (FXs.ContainsKey(assetId))
-                        FXs[assetId].BlueprintReferences[blueprint.AssetGuid.ToString()] = 0x00;
+                    var prefabName = link.Load().name;
+
+                    if (FXs.ContainsKey(prefabName) && FXs[prefabName].AssetId != link.AssetId)
+                        Main.Logger.Warning($"PREFAB NAME COLLISON! {prefabName} between {link.AssetId} and {FXs[prefabName].AssetId}");
+                    else if (FXs.ContainsKey(link.AssetId))
+                        FXs[link.AssetId].BlueprintReferences[blueprint.AssetGuid.ToString()] = 0x00;
                     else
-                        FXs[assetId] = new FxCacheItem(assetId, link.Load().name, blueprint);
+                        FXs[link.AssetId] = new FxCacheItem(link.AssetId, prefabName, link, blueprint);
                 });
             }
             catch
             {
-                Main.Logger.Warning($"{link.AssetId} failed to load from bluprint {blueprint.name}: {blueprint.AssetGuid}");
+                Main.Logger.Warning($"{link.AssetId} failed to load from blueprint {blueprint.name}: {blueprint.AssetGuid}");
             }
         }
     }
