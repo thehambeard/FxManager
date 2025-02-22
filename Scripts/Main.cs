@@ -21,6 +21,7 @@ namespace FxManager
             modDetails.IsEnabled += () => IsEnabled;
             modDetails.OnSetEnabled += OnEnabled;
             OnEnabled(IsEnabled);
+
         }
 
         private static void OnEnabled(bool enabled)

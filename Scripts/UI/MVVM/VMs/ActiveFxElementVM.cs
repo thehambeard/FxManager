@@ -1,4 +1,5 @@
-﻿using FxManager.Fx;
+﻿using FxManager.Cache;
+using Kingmaker.Visual;
 using Owlcat.Runtime.UI.MVVM;
 using System;
 using System.Collections.Generic;
@@ -13,27 +14,36 @@ namespace FxManager.UI.MVVM.VMs
     {
         public ReactiveProperty<string> FxName = new ReactiveProperty<string>("");
         public ReactiveProperty<string> Description = new ReactiveProperty<string>("");
-        public readonly ActiveFxModelBase FxModel;
-
-        public ActiveFxElementVM(ActiveFxModelBase activeFxModelBase)
+        public UnitFxVisibilityManager UnitFxVisibilityManager { get; private set; }
+        public ActiveFxElementVM(UnitFxVisibilityManager visibilityManager)
         {
-            FxModel = activeFxModelBase;
+            SetManager(visibilityManager);
+        }
+
+        public void SetManager(UnitFxVisibilityManager visibilityManager)
+        {
+            UnitFxVisibilityManager = visibilityManager;
             SetProperties();
         }
 
         private void SetProperties()
         {
-            FxName.Value = FxModel.Name;
-            string description = FxModel.Handle.Request.Target.name;
-
-            switch (FxModel)
+            if (UnitFxVisibilityManager == null)
             {
-                case ActiveFxModelUnit unitModel:
-                    description = $"Type: Unit {unitModel.Unit.Data.CharacterName} | Target: {FxModel.Handle.Request.Target.name}";
-                    break;
+                FxName.Value = "null";
+                Description.Value = "null";
+                return;
             }
 
-            Description.Value = description;
+            FxName.Value = UnitFxVisibilityManager.gameObject.name;
+            StringBuilder description = new StringBuilder();
+            description.Append("Unit: ");
+            description.Append(UnitFxVisibilityManager.m_Unit == null ? "null" : UnitFxVisibilityManager.m_Unit.Data.CharacterName);
+            description.Append(" Renderers: ");
+            description.Append(UnitFxVisibilityManager.m_Renderers.Count);
+            description.Append(" SnapControllers: ");
+            description.Append(UnitFxVisibilityManager.m_SnapControllers.Count);
+            Description.Value = description.ToString();
         }
 
 

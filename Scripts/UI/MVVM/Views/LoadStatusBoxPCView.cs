@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UniRx;
-using FxManager.Fx;
+using FxManager.Cache;
 using UnityEngine.UI;
 using Owlcat.Runtime.UI.Controls.Button;
 using Owlcat.Runtime.UI.Controls.Other;
@@ -31,8 +31,8 @@ namespace FxManager.UI.MVVM.Views
         public override void BindViewImplementation()
         {
             gameObject.SetActive(true);
-            base.AddDisposable(FxCache.Instance.Progress.Subscribe(OnProgessChange));
-            base.AddDisposable(FxCache.Instance.Status.Subscribe(OnStatusChange));
+            base.AddDisposable(BlueprintCache.Instance.Progress.Subscribe(OnProgessChange));
+            base.AddDisposable(BlueprintCache.Instance.Status.Subscribe(OnStatusChange));
             base.AddDisposable(_okButton.OnClickAsObservable().Subscribe(OnOkButtonClick));
             _okButton.gameObject.SetActive(false);
         }
@@ -42,15 +42,15 @@ namespace FxManager.UI.MVVM.Views
             gameObject.SetActive(false);
         }
 
-        private void OnStatusChange(FxCollectionStatus status)
+        public void OnStatusChange(BlueprintLoadingStatus status)
         {
-            if (status == FxCollectionStatus.Complete) 
+            if (status == BlueprintLoadingStatus.Complete) 
                 gameObject.SetActive(false);
 
-            if (status == FxCollectionStatus.Error)
+            if (status == BlueprintLoadingStatus.Error)
                 _okButton.gameObject.SetActive(true);
 
-            _loadingStatusText.text = Enum.GetName(typeof(FxCollectionStatus), status).ConvertCamelCaseToWords();
+            _loadingStatusText.text = Enum.GetName(typeof(BlueprintLoadingStatus), status).ConvertCamelCaseToWords();
         }
 
         private void OnProgessChange(float value)

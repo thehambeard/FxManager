@@ -1,4 +1,4 @@
-﻿using FxManager.Fx;
+﻿using FxManager.Cache;
 using Kingmaker.Dungeon.Actions;
 using Owlcat.Runtime.UI.MVVM;
 using System;

@@ -1,5 +1,4 @@
-﻿using FxManager.UI.MVVM.VMs;
-using HarmonyLib;
+﻿using HarmonyLib;
 using Kingmaker.Blueprints;
 using Kingmaker.UI.Log;
 using Kingmaker.UI.MVVM._PCView.IngameMenu;
@@ -12,13 +11,14 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using FxManager.Utility.Helpers;
+using FxManager.UI.MVVM.VMs;
 
 namespace FxManager.UI.MVVM.Views
 {
     internal class FxManagerRootPCView : ViewBase<FxManagerRootVM>, IInitializable
     {
         [SerializeField]
-        private ActiveFxsWindowPCView _activeFxsWindowPCView;
+        private ControlWindowPCView _controlWindowPCView;
 
         [SerializeField]
         private FxOpenCloseWindowPCView _openCloseWindowPCView;
@@ -26,22 +26,15 @@ namespace FxManager.UI.MVVM.Views
         [SerializeField]
         private CurrentFxPreviewPCView _currentFxPreviewPCView;
 
-#if UNITY_EDITOR
-        private void OnEnable()
-        {
-            Initialize();
-            Bind(new FxManagerRootVM());
-        }
-#endif
         public void Initialize()
         {
             _currentFxPreviewPCView.Initialize();
-            _activeFxsWindowPCView.Initialize();
+            _controlWindowPCView.Initialize();
         }
 
         public override void BindViewImplementation()
         {
-            _activeFxsWindowPCView.Bind(new ActiveFxsWindowVM());
+            _controlWindowPCView.Bind(new ControlWindowVM(_controlWindowPCView.ActiveFxsWindow.gameObject));
             _openCloseWindowPCView.Bind(new FxOpenCloseVM());
             _currentFxPreviewPCView.Bind(new CurrentFxPreviewVM());
         }

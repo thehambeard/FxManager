@@ -17,9 +17,6 @@ namespace FxManager.UI.MVVM.Views
     internal class SettingsPanelPCView : ViewBase<SettingsPanelVM>, IInitializable
     {
         [SerializeField]
-        private TextMeshProUGUI _fxName;
-
-        [SerializeField]
         private VirtualListVertical _virtualListVertical;
 
         [SerializeField]
@@ -44,7 +41,6 @@ namespace FxManager.UI.MVVM.Views
 
         public override void BindViewImplementation()
         {
-            base.AddDisposable(_virtualListVertical.Subscribe<VirtualListElementVMBase>(base.ViewModel.SettingEntities));
         }
 
         public override void DestroyViewImplementation()
